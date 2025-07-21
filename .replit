@@ -1,0 +1,13 @@
+modules = ["python-3.12", "web"]
+run = "uvicorn main:app --host 0.0.0.0 --port 3000"
+
+[nix]
+channel = "stable-24_05"
+packages = ["openssl"]
+
+[deployment]
+run = ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 3000"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80

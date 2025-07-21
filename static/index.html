@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Telegram Info Checker</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    h1, h2 {
+      color: #2c3e50;
+      margin-top: 1rem;
+    }
+    .container {
+      background: white;
+      padding: 1.5rem;
+      margin: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 550px;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 1rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      resize: vertical;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    pre {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 1rem;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 400px;
+    }
+    .error {
+      color: red;
+      margin-top: 1rem;
+    }
+    .section-title {
+      margin-top: 2rem;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    footer {
+      margin-top: auto;
+      padding: 1rem;
+      font-size: 0.8rem;
+      color: #777;
+    }
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Telegram Info Checker</h1>
+
+    <!-- Username section -->
+    <h2 class="section-title">🔎 Username / Chat Lookup</h2>
+    <input type="text" id="usernameInput" placeholder="Enter Telegram username (without @ or full @username)" />
+    <button onclick="fetchUserInfo()">Get Info</button>
+    <div id="usernameResult" class="result-box"></div>
+
+    <!-- Phone section -->
+    <h2 class="section-title">📞 Phone Number Lookup</h2>
+    <textarea id="phoneInput" rows="4" placeholder="Enter phone numbers (one per line) like 8801XXXXXXX"></textarea>
+    <button onclick="checkPhones()">Check Numbers</button>
+    <div id="phoneResult" class="result-box"></div>
+  </div>
+
+  <footer>
+    Powered by <a href="https://t.me/bbinl_cc_bot">bbinl cc bot</a> &middot;
+    <a href="https://github.com/bbinl/fuck.git" target="_blank" rel="noopener noreferrer">Source Code</a>
+  </footer>
+
+  <script>
+    async function fetchUserInfo() {
+      const username = document.getElementById('usernameInput').value.trim();
+      const resultBox = document.getElementById('usernameResult');
+      resultBox.innerHTML = "";
+
+      if (!username) {
+        resultBox.innerHTML = '<p class="error">Please enter a username.</p>';
+        return;
+      }
+
+      resultBox.innerHTML = 'Loading...';
+
+      try {
+        const response = await fetch(`/get_user_info?username=${encodeURIComponent(username)}`);
+        const text = await response.text();
+
+        if (response.ok) {
+          resultBox.innerHTML = `<pre>${text}</pre>`;
+        } else {
+          resultBox.innerHTML = `<p class="error">Error: ${text}</p>`;
+        }
+      } catch (err) {
+        resultBox.innerHTML = `<p class="error">Network error: ${err.message}</p>`;
+      }
+    }
+
+    async function checkPhones() {
+      const input = document.getElementById("phoneInput").value.trim();
+      const phoneResult = document.getElementById("phoneResult");
+      phoneResult.innerHTML = "";
+
+      if (!input) {
+        phoneResult.innerHTML = '<p class="error">Please enter phone numbers.</p>';
+        return;
+      }
+
+      const phones = input.split("\n").map(p => p.trim()).filter(p => p);
+      if (phones.length === 0) {
+        phoneResult.innerHTML = '<p class="error">No valid phone numbers found.</p>';
+        return;
+      }
+
+      phoneResult.innerHTML = 'Checking...';
+
+      try {
+        const res = await fetch(`/check?phones=${phones.join(",")}`);
+        const data = await res.json();
+
+        const valid = [];
+        const invalid = [];
+
+        data.results.forEach(user => {
+          if (user.username || user.first_name) {
+            const name = user.username ? `@${user.username}` : `${user.first_name} ${user.last_name || ''}`;
+            valid.push(`✅ ${user.phone} → ${name}`);
+          } else {
+            invalid.push(`❌ ${user.phone} → No Telegram account found`);
+          }
+        });
+
+        let output = "";
+        if (valid.length) {
+          output += "✅ Valid Accounts:\n" + valid.join("\n") + "\n\n";
+        }
+        if (invalid.length) {
+          output += "❌ Invalid Accounts:\n" + invalid.join("\n");
+        }
+
+        phoneResult.innerHTML = `<pre>${output.trim()}</pre>`;
+      } catch (err) {
+        phoneResult.innerHTML = `<p class="error">Error: ${err.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
