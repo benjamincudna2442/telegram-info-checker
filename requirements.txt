@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-telethon
-pyrogram
-tgcrypto
-python-multipart
-python-dateutil
